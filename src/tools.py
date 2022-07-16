@@ -56,7 +56,7 @@ def get_newbie_plot(data):
 	)
 
 	fig.update_yaxes(
-		title='Количество'
+		title='Количество   клиентов'
 	)
 
 	fig.update_layout(
@@ -82,7 +82,7 @@ def get_zipcode_plot(data):
 	)
 
 	fig.update_yaxes(
-		title='Количество'
+		title='Количество   клиентов'
 	)
 
 	fig.update_layout(
@@ -99,7 +99,7 @@ def get_channel_plot(data):
 	fig = px.histogram(
 		data['channel'],
 		color=data['channel'],
-		title='Распределение клиентов по флагу zip_code'
+		title='Распределение клиентов по флагу Channel'
 	)
 
 	fig.update_xaxes(
@@ -108,7 +108,7 @@ def get_channel_plot(data):
 	)
 
 	fig.update_yaxes(
-		title='Количество'
+		title='Количество   клиентов'
 	)
 
 	fig.update_layout(
@@ -130,11 +130,12 @@ def get_history_segment_plot(data):
 
 	fig.update_xaxes(
 		title='',
-		categoryorder='total descending'
+		categoryorder='total descending',
+		tickangle=45
 	)
 
 	fig.update_yaxes(
-		title='Количество'
+		title='Количество   клиентов'
 	)
 
 	fig.update_layout(
