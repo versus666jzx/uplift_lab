@@ -76,3 +76,39 @@ with st.expander('Развернуть блок анализа данных'):
 	st.write(f'К сегментам \$350-\$500 и \$500-\$750 относится {tmp_res[3]:.2f}% и {tmp_res[4]:.2f}% пользователей соответственно.')
 	st.write(f'Меньше всего пользователей в сегментах \$750-\$1.000 ({tmp_res[-2]:.2f}%) и \$1.000+ ({tmp_res[-1]:.2f}%).')
 
+	tmp_res = list(dataset.recency.value_counts(normalize=True) * 100)
+	st.plotly_chart(tools.get_recency_plot(dataset), use_container_width=True)
+	st.write(f'Большинство клиентов являются активными клиентами платформы, и совершали покупки в течение месяца ({tmp_res[0]:.2f}%)')
+	st.write('Также заметно, что 9 и 10 месяцев назад, много клиентов совершали покупки. Это может свидетельствовать о проведении'
+	         'рекламной кампании в это время или чего-то еще.')
+	st.write('Также интересно понаблюдать за долями новых клиентов в данном распределении.')
+
+	st.plotly_chart(tools.get_history_plot(dataset), use_container_width=True)
+	st.markdown('_График интерактивный_')
+	st.write('Абсолютное большинство клиентов тратят \$25-\$35 на покупки, но есть и малая доля тех, кто тратит более \$3.000')
+	st.write('Интересный факт: все покупки более \$500 совершают только новые клиенты')
+
+st.subheader('Какие данные возьмем для проведения рекламной кампании?')
+clients_filter = st.radio('На каких клиентов будем воздействовать?', options=['Все', 'Только на новых', 'Только на старых'])
+
+
+st.write('Выберите класс клиентов, по объему денег, потраченных в прошлом году (history segments).')
+first_group = st.checkbox('$0-$100', value=True)
+second_group = st.checkbox('$100-$200', value=True)
+third_group = st.checkbox('$200-$350', value=True)
+fourth_group = st.checkbox('$350-$500', value=True)
+fifth_group = st.checkbox('$500-$750', value=True)
+sixth_group = st.checkbox('$750-$1.000', value=True)
+seventh_group = st.checkbox('$1.000+', value=True)
+
+st.write('Каких пользователей по почтовому коду выберем')
+surburban = st.checkbox('Surburban', value=True)
+urban = st.checkbox('Urban', value=True)
+rural = st.checkbox('Rural', value=True)
+
+recency = st.slider(label='Месяцев с момента покупки', min_value=int(dataset.recency.min()), max_value=int(dataset.recency.max()), value=(int(dataset.recency.min()), int(dataset.recency.max())))
+
+if not first_group and not second_group and not third_group and not fourth_group and not fifth_group and not sixth_group and not seventh_group:
+	pass
+else:
+	st.button('Отфильтровать')

@@ -1,6 +1,7 @@
 from typing import Any
 
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from sklift.datasets import fetch_hillstrom
 from catboost import CatBoostClassifier
@@ -46,7 +47,7 @@ def get_newbie_plot(data):
 	fig = px.histogram(
 		data['newbie'],
 		color=data['newbie'],
-		title='Распределение клиентов по флагу Newbie'
+		title='Распределение клиентов по флагу newbie'
 	)
 
 	fig.update_xaxes(
@@ -61,7 +62,8 @@ def get_newbie_plot(data):
 
 	fig.update_layout(
 		showlegend=False,
-		bargap=0.3
+		bargap=0.3,
+		margin=dict(l=20, r=10, t=80, b=10)
 	)
 
 	fig.update_traces(hovertemplate="Количество клиентов: %{y}")
@@ -72,8 +74,8 @@ def get_newbie_plot(data):
 def get_zipcode_plot(data):
 	fig = px.histogram(
 		data['zip_code'],
-		color=data['zip_code'],
-		title='Распределение клиентов по флагу zip_code'
+		color=data['newbie'],
+		title='Распределение клиентов по почтовым индексам'
 	)
 
 	fig.update_xaxes(
@@ -86,7 +88,11 @@ def get_zipcode_plot(data):
 	)
 
 	fig.update_layout(
-		showlegend=False,
+		showlegend=True,
+		legend_orientation="h",
+		legend=dict(x=.66, y=.99, title='Новый клиент'),
+		margin=dict(l=20, r=10, t=80, b=10),
+		hovermode="x",
 		bargap=0.3
 	)
 
@@ -98,8 +104,8 @@ def get_zipcode_plot(data):
 def get_channel_plot(data):
 	fig = px.histogram(
 		data['channel'],
-		color=data['channel'],
-		title='Распределение клиентов по флагу Channel'
+		color=data['newbie'],
+		title='Распределение клиентов по каналам покупки товаров'
 	)
 
 	fig.update_xaxes(
@@ -112,7 +118,11 @@ def get_channel_plot(data):
 	)
 
 	fig.update_layout(
-		showlegend=False,
+		showlegend=True,
+		legend_orientation="h",
+		legend=dict(x=.66, y=.99, title='Новый клиент'),
+		margin=dict(l=20, r=10, t=80, b=10),
+		hovermode="x",
 		bargap=0.3
 	)
 
@@ -125,7 +135,7 @@ def get_history_segment_plot(data):
 	fig = px.histogram(
 		data['history_segment'],
 		color=data['history_segment'],
-		title='Распределение клиентов по флагу history_segment'
+		title='Распределение клиентов по количеству $, потраченных в прошлом году'
 	)
 
 	fig.update_xaxes(
@@ -140,9 +150,80 @@ def get_history_segment_plot(data):
 
 	fig.update_layout(
 		showlegend=False,
-		bargap=0.3
+		bargap=0.3,
+		margin=dict(l=20, r=10, t=80, b=10)
 	)
 
 	fig.update_traces(hovertemplate="Количество клиентов: %{y}")
+
+	return fig
+
+
+def get_recency_plot(data):
+	fig = px.histogram(
+		data['recency'],
+		color=data['newbie'],
+		title='Распределение клиентов по количеству месяцев с последней покупки'
+	)
+
+	fig.update_xaxes(
+		title='Месяцев  после  покупки'
+	)
+
+	fig.update_yaxes(
+		title='Количество  клиентов'
+	)
+
+	fig.update_layout(
+		showlegend=True,
+		legend_orientation="h",
+		legend=dict(x=.66, y=.99, title='Новый клиент'),
+		margin=dict(l=20, r=10, t=80, b=10),
+		hovermode="x",
+		bargap=0.3
+	)
+
+	fig.update_traces(hovertemplate="<br>".join(
+			[
+				"Месяцев: %{x}",
+				"Клиентов: %{y}"
+			]
+		)
+	)
+
+	return fig
+
+
+def get_history_plot(data):
+	fig = px.histogram(
+		data['history'],
+		color=data['newbie'],
+		title='Распределение клиентов по количеству месяцев с последней покупки'
+	)
+
+	fig.update_xaxes(
+		title='Месяцев  после  покупки'
+	)
+
+	fig.update_yaxes(
+		title='Количество  клиентов'
+	)
+
+	fig.update_layout(
+		showlegend=True,
+		legend_orientation="h",
+		legend=dict(x=.66, y=.99, title='Новый клиент'),
+		margin=dict(l=20, r=10, t=80, b=10),
+		hovermode="x",
+		bargap=0.3
+	)
+
+	fig.update_traces(hovertemplate="<br>".join(
+			[
+				'Совершено покупок на: $%{x}',
+				'Количество клиентов: %{y}'
+			]
+		)
+	)
 
 	return fig
