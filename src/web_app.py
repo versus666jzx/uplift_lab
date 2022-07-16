@@ -1,15 +1,70 @@
+import pandas as pd
+
 import streamlit as st
 
 import tools
-from time import sleep
 
-norm_columns = ['age', 'children', 'gender', 'main_format', 'months_from_register', 'response_sms', 'response_viber']
-dataset = tools.get_data()
+
+dataset, target, treatment = tools.get_data()
 
 st.title('Uplift lab')
 
-st.write('Какие данные выбрать для рассылки?')
-st.write(dataset.data[norm_columns].head())
-columns = st.multiselect(options=norm_columns, label='Выберите признак')
-age = st.select_slider(label='', options=range(1, 101), value=[18, 100])
-st.write(dataset.data[dataset.data['age'].isin(age)][norm_columns])
+st.markdown(
+	"""
+	#### Рассмотрим пример применения одного из подходов прогнозирования _uplift_.
+	
+	Данные для примера взяты из [_The MineThatData E-Mail Analytics And Data Mining Challenge_](https://blog.minethatdata.com/2008/03/minethatdata-e-mail-analytics-and-data.html)
+	
+	Этот набор данных содержит 42 693 строк с данными клиентов, которые в последний раз совершали покупки в течение двенадцати месяцев.
+	
+	Среди клиентов была проведена рекламная кампания с помощью _email_ рассылки:
+	- 1/3 клиентов были выбраны случайным образом для получения электронного письма, рекламирующего мужскую продукцию;
+	- 1/3 клиентов были выбраны случайным образом для получения электронного письма, рекламирующего женскую продукцию;
+	- С оставшейся 1/3 коммуникацию не проводили.
+	
+	Для каждого клиента из выборки замерили факт перехода по ссылке в письме, факт совершения покупки и сумму трат за
+	две недели, следующими после получения письма.
+	
+	Пример данных приведен ниже.
+	"""
+)
+refresh = st.button('Обновить выборку')
+title_subsample = dataset.sample(7)
+if refresh:
+	title_subsample = dataset.sample(7)
+st.dataframe(title_subsample, width=700)
+st.write( f"Всего записей: {dataset.shape[0]}")
+
+st.write('Описание данных')
+st.markdown(
+	"""
+		| Колонка           | Обозначение                                                            |
+		|-------------------|------------------------------------------------------------------------|
+		| _recency_         | Месяцев с момента последней покупки                                    |
+		| _history_Segment_ | Классификация долларов, потраченных в прошлом году                     |
+		| _history_         | Фактическая стоимость в долларах, потраченная в прошлом году           |
+		| _mens_            | Флаг 1/0, 1 = клиент приобрел мужские товары в прошлом году            |
+		| _womens_          | Флаг 1/0, 1 = клиент приобрел женские товары в прошлом году            |
+		| _zip_code_        | Классифицирует почтовый индекс как городской, пригородный или сельский |
+		| _newbie_          | Флаг 1/0, 1 = Новый клиент за последние двенадцать месяцев             |
+		| _channel_         | Описывает каналы, которые клиент приобрел в прошлом году               |
+
+		---
+	"""
+)
+st.write("Для того, чтобы лучше понять на какую аудиторию лучше запустить рекламную кампанию, проведем небольшой \
+		  анализ данных")
+
+with st.expander('Развернуть блок анализа данных'):
+
+	st.plotly_chart(tools.get_newbie_plot(dataset))
+	st.write(f'В данных примерно одинаковое количество новых и "старых клиентов". '
+			 f'Отношение новых клиентов к старым: {(dataset["newbie"] == 1).sum() / (dataset["newbie"] == 0).sum():.2f}')
+
+	st.plotly_chart(tools.get_zipcode_plot(dataset))
+	st.write(f'Большинство клиентов из пригорода: {(dataset["zip_code"] == "Surburban").sum()}')
+
+	st.plotly_chart(tools.get_channel_plot(dataset))
+
+	st.plotly_chart(tools.get_history_segment_plot(dataset))
+
