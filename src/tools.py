@@ -4,12 +4,17 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklift.datasets import fetch_hillstrom
-from sklift.metrics import uplift_at_k
+from sklift.metrics import uplift_at_k, uplift_by_percentile, weighted_average_uplift
+from sklift.viz import plot_uplift_by_percentile
 from catboost import CatBoostClassifier
 import sklearn
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+
+
+def test():
+	return 'Test'
 
 
 @st.experimental_memo
@@ -38,7 +43,7 @@ def data_split(data: pd.DataFrame, treatment: pd.DataFrame, target: pd.DataFrame
 		treatment,
 		target,
 		stratify=stratify_cols,
-		test_size=0.3,
+		test_size=0.5,
 		random_state=42
 	)
 	return X_train, X_val, trmnt_train, trmnt_val, y_train, y_val
@@ -131,10 +136,13 @@ def filter_data(data: pd.DataFrame, filters: dict) -> pd.DataFrame or None:
 	return data
 
 
-def send_promo_and_get_res(data_train: pd.DataFrame, treatment: pd.DataFrame, target: pd.DataFrame):
-	indexes = data.index
-	target = target.loc[indexes]
-	treatment = treatment.loc[indexes]
+def uplift_by_percentile():
+	pass
+
+
+def get_weighted_average_uplift(target_test: pd.DataFrame, uplift, treatment_test: pd.DataFrame):
+	res = weighted_average_uplift(target_test, uplift, treatment_test)
+	return res
 
 
 def get_newbie_plot(data):

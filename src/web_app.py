@@ -4,10 +4,13 @@ import streamlit as st
 
 import tools
 
-
 dataset, target, treatment = tools.get_data()
 
-data_train, data_val, treatment_train, treatment_val, target_train, target_val = tools.data_split(dataset, treatment, target)
+data_train, data_test, treatment_train, treatment_test, target_train, target_test = tools.data_split(dataset, treatment, target)
+
+if 'filter_data' not in st.session_state.keys():
+	st.session_state.filter_data = True
+
 
 st.title('Uplift lab')
 
@@ -32,11 +35,11 @@ st.markdown(
 	"""
 )
 refresh = st.button('Обновить выборку')
-title_subsample = data_train.sample(7)
+title_subsample = data_test.sample(7)
 if refresh:
-	title_subsample = data_train.sample(7)
+	title_subsample = data_test.sample(7)
 st.dataframe(title_subsample, width=700)
-st.write(f"Всего записей: {data_train.shape[0]}")
+st.write(f"Всего записей: {data_test.shape[0]}")
 
 st.write('Описание данных')
 st.markdown(
@@ -60,34 +63,34 @@ st.write("Для того, чтобы лучше понять на какую а
 
 with st.expander('Развернуть блок анализа данных'):
 
-	st.plotly_chart(tools.get_newbie_plot(data_train), use_container_width=True)
+	st.plotly_chart(tools.get_newbie_plot(data_test), use_container_width=True)
 	st.write(f'В данных примерно одинаковое количество новых и "старых клиентов". '
-			 f'Отношение новых клиентов к старым: {(data_train["newbie"] == 1).sum() / (data_train["newbie"] == 0).sum():.2f}')
+			 f'Отношение новых клиентов к старым: {(data_test["newbie"] == 1).sum() / (data_test["newbie"] == 0).sum():.2f}')
 
-	st.plotly_chart(tools.get_zipcode_plot(data_train), use_container_width=True)
-	tmp_res = data_train.zip_code.value_counts(normalize=True) * 100
+	st.plotly_chart(tools.get_zipcode_plot(data_test), use_container_width=True)
+	tmp_res = data_test.zip_code.value_counts(normalize=True) * 100
 	st.write(f'Большинство клиентов из пригорода: {tmp_res["Surburban"]:.2f}%, из города: {tmp_res["Urban"]:.2f}% и из села: {tmp_res["Rural"]:.2f}%')
 
-	tmp_res = data_train.channel.value_counts(normalize=True) * 100
-	st.plotly_chart(tools.get_channel_plot(data_train), use_container_width=True)
+	tmp_res = data_test.channel.value_counts(normalize=True) * 100
+	st.plotly_chart(tools.get_channel_plot(data_test), use_container_width=True)
 	st.write(f'В прошлом году почти одинаковое количество клиентов покупало товары через телефон и сайт, {tmp_res["Phone"]:.2f}% и {tmp_res["Web"]:.2f}% соответственно,'
 	         f' а {tmp_res["Multichannel"]:.2f}% клиентов покупали товары воспользовавшись двумя платформами.')
 
-	tmp_res = data_train.history_segment.value_counts(normalize=True) * 100
-	st.plotly_chart(tools.get_history_segment_plot(data_train), use_container_width=True)
+	tmp_res = data_test.history_segment.value_counts(normalize=True) * 100
+	st.plotly_chart(tools.get_history_segment_plot(data_test), use_container_width=True)
 	st.write(f'Как мы видим, большинство пользователей относится к сегменту \$0-\$100 ({tmp_res[0]:.2f}%), второй и '
 	         f'третий по количеству пользователей сегменты \$100-\$200 ({tmp_res[1]:.2f}%) и \$200-\$350 ({tmp_res[2]:.2f}%).')
 	st.write(f'К сегментам \$350-\$500 и \$500-\$750 относится {tmp_res[3]:.2f}% и {tmp_res[4]:.2f}% пользователей соответственно.')
 	st.write(f'Меньше всего пользователей в сегментах \$750-\$1.000 ({tmp_res[-2]:.2f}%) и \$1.000+ ({tmp_res[-1]:.2f}%).')
 
-	tmp_res = list(data_train.recency.value_counts(normalize=True) * 100)
-	st.plotly_chart(tools.get_recency_plot(data_train), use_container_width=True)
+	tmp_res = list(data_test.recency.value_counts(normalize=True) * 100)
+	st.plotly_chart(tools.get_recency_plot(data_test), use_container_width=True)
 	st.write(f'Большинство клиентов являются активными клиентами платформы, и совершали покупки в течение месяца ({tmp_res[0]:.2f}%)')
 	st.write('Также заметно, что 9 и 10 месяцев назад, много клиентов совершали покупки. Это может свидетельствовать о проведении'
 	         'рекламной кампании в это время или чего-то еще.')
 	st.write('Также интересно понаблюдать за долями новых клиентов в данном распределении.')
 
-	st.plotly_chart(tools.get_history_plot(data_train), use_container_width=True)
+	st.plotly_chart(tools.get_history_plot(data_test), use_container_width=True)
 	st.markdown('_График интерактивный. Двойной клик вернет в начальное состояние._')
 	st.write('Абсолютное большинство клиентов тратят \$25-\$35 на покупки, но есть и малая доля тех, кто тратит более \$3.000')
 	st.write('Интересный факт: все покупки более \$500 совершают только новые клиенты')
@@ -140,7 +143,7 @@ rural = st.checkbox('Rural', value=True)
 if rural:
 	filters['zip_code']['rural'] = True
 
-recency = st.slider(label='Месяцев с момента покупки', min_value=int(data_train.recency.min()), max_value=int(data_train.recency.max()), value=(int(data_train.recency.min()), int(data_train.recency.max())))
+recency = st.slider(label='Месяцев с момента покупки', min_value=int(data_test.recency.min()), max_value=int(data_test.recency.max()), value=(int(data_test.recency.min()), int(data_test.recency.max())))
 filters['recency'] = recency
 
 disabled = False
@@ -151,22 +154,31 @@ elif not surburban and not urban and not rural:
 	st.error('Необходимо выбрать хотя бы один почтовый индекс')
 	disabled = True
 
-filter_data = st.button(label='Отфильтровать', disabled=disabled)
 
-if filter_data:
-	filtered_dataset = tools.filter_data(data_train, filters)
-	if filtered_dataset is None:
-		st.error('Нет подходящих под выбранный фильтр клиентов. Попробуйте изменить фильтр.')
+if not disabled:
+	filtered_dataset = tools.filter_data(data_test, filters)
+	# значение uplift для записей тех клиентов, который выбрал пользователь равен 1
+	import numpy as np
+	uplift = pd.DataFrame(
+		data=[np.random.random() for _ in filtered_dataset.index],
+		index=filtered_dataset.index
+		)
+	target_filtered =target_test.loc[filtered_dataset.index]
+	treatment_filtered = treatment_test.loc[filtered_dataset.index]
 	sample_size = 7 if filtered_dataset.shape[0] >= 7 else filtered_dataset.shape[0]
 	example = filtered_dataset.sample(sample_size)
 	st.write('Пример пользователей, которым будет отправлена реклама')
 	st.dataframe(example)
 	st.info(f'Количество клиентов, которым реклама будет отправлена: _**{filtered_dataset.shape[0]}**_ ({filtered_dataset.shape[0] / data_train.shape[0] * 100 :.2f}% от всех клиентов)')
-else:
-	# нельзя отправить рекламу, до фильтрации
-	disabled = True
+
 
 send_promo = st.button('Отправить рекламу и посмотреть результат', disabled=disabled)
 if send_promo:
-	pass
+	from sklift.metrics import uplift_by_percentile, uplift_at_k
+	st.write(uplift_by_percentile(y_true=target_filtered, uplift=uplift, treatment=treatment_filtered))
+	st.write(uplift_at_k(y_true=target_filtered, uplift=uplift, treatment=treatment_filtered, strategy='by_group', k=0.3))
+	# st.write(tools.get_weighted_average_uplift(target_filtered, uplift, treatment_filtered))
+
+# st.write('Если известно, на какой процент пользователей необходимо воздействовать, укажите это ниже')
+# st.slider(label='Процент пользователей', min_value=0, max_value=100, value=100)
 
