@@ -157,13 +157,12 @@ elif not surburban and not urban and not rural:
 
 if not disabled:
 	filtered_dataset = tools.filter_data(data_test, filters)
+	if filtered_dataset is None:
+		st.error('Не найдено пользователей для данных фильтров. Попробуйте изменить фильтры.')
 	# значение uplift для записей тех клиентов, который выбрал пользователь равен 1
 	import numpy as np
-	uplift = pd.DataFrame(
-		data=[np.random.random() for _ in filtered_dataset.index],
-		index=filtered_dataset.index
-		)
-	target_filtered =target_test.loc[filtered_dataset.index]
+	uplift = [1 for _ in filtered_dataset.index]
+	target_filtered = target_test.loc[filtered_dataset.index]
 	treatment_filtered = treatment_test.loc[filtered_dataset.index]
 	sample_size = 7 if filtered_dataset.shape[0] >= 7 else filtered_dataset.shape[0]
 	example = filtered_dataset.sample(sample_size)
@@ -174,11 +173,8 @@ if not disabled:
 
 send_promo = st.button('Отправить рекламу и посмотреть результат', disabled=disabled)
 if send_promo:
-	from sklift.metrics import uplift_by_percentile, uplift_at_k
-	st.write(uplift_by_percentile(y_true=target_filtered, uplift=uplift, treatment=treatment_filtered))
-	st.write(uplift_at_k(y_true=target_filtered, uplift=uplift, treatment=treatment_filtered, strategy='by_group', k=0.3))
+	st.write(tools.get_weighted_average_uplift(target_filtered, uplift, treatment_filtered))
 	# st.write(tools.get_weighted_average_uplift(target_filtered, uplift, treatment_filtered))
 
 # st.write('Если известно, на какой процент пользователей необходимо воздействовать, укажите это ниже')
 # st.slider(label='Процент пользователей', min_value=0, max_value=100, value=100)
-

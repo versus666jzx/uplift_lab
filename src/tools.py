@@ -141,8 +141,7 @@ def uplift_by_percentile():
 
 
 def get_weighted_average_uplift(target_test: pd.DataFrame, uplift, treatment_test: pd.DataFrame):
-	res = weighted_average_uplift(target_test, uplift, treatment_test)
-	return res
+	return weighted_average_uplift(target_test, uplift, treatment_test)
 
 
 def get_newbie_plot(data):
