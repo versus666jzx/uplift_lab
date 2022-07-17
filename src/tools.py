@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklift.datasets import fetch_hillstrom
+from sklift.metrics import uplift_at_k
 from catboost import CatBoostClassifier
 import sklearn
 import streamlit as st
@@ -28,7 +29,7 @@ def get_data() -> tuple[Any, Any, Any]:
 
 
 @st.experimental_memo
-def data_split(data, treatment, target) -> tuple[Any, Any, Any, Any, Any, Any]:
+def data_split(data: pd.DataFrame, treatment: pd.DataFrame, target: pd.DataFrame) -> tuple[Any, Any, Any, Any, Any, Any]:
 	# склеиваем threatment и target для дальнейшей стратификации по ним
 	stratify_cols = pd.concat([treatment, target], axis=1)
 	# сплитим датасет
@@ -41,6 +42,99 @@ def data_split(data, treatment, target) -> tuple[Any, Any, Any, Any, Any, Any]:
 		random_state=42
 	)
 	return X_train, X_val, trmnt_train, trmnt_val, y_train, y_val
+
+
+def filter_by_newbie(data: pd.DataFrame, newbie_filter: str) -> pd.DataFrame:
+	if newbie_filter == 'Всем':
+		return data
+	elif newbie_filter == 'Только новым':
+		return data[data['newbie'] == 1]
+	elif newbie_filter == 'Только старым':
+		return data[data['newbie'] == 0]
+
+
+def filter_by_channel(data: pd.DataFrame, channel_filter: str) -> pd.DataFrame:
+	if channel_filter == 'Всем':
+		return data
+	if channel_filter == 'Phone':
+		return data[data['channel'] == channel_filter]
+	if channel_filter == 'Web':
+		return data[data['channel'] == channel_filter]
+	if channel_filter == 'Multichannel':
+		return data[data['channel'] == channel_filter]
+
+
+def filter_by_mens(data: pd.DataFrame, mens_filter: str) -> pd.DataFrame:
+	if mens_filter == 'Любые товары':
+		return data
+	if mens_filter == 'Мужские':
+		return data[data['mens'] == 1]
+	if mens_filter == 'Женские':
+		return data[data['womens'] == 1]
+
+
+def filter_by_history_segments(data: pd.DataFrame, history_segments_filter: dict) -> pd.DataFrame:
+	filtered_indexes = set()
+	if history_segments_filter.get('1) $0 - $100'):
+		filtered_indexes = filtered_indexes.union(data[data['history_segment'] == '1) $0 - $100'].index)
+	if history_segments_filter.get('2) $100 - $200'):
+		filtered_indexes = filtered_indexes.union(data[data['history_segment'] == '2) $100 - $200'].index)
+	if history_segments_filter.get('3) $200 - $350'):
+		filtered_indexes = filtered_indexes.union(data[data['history_segment'] == '3) $200 - $350'].index)
+	if history_segments_filter.get('4) $350 - $500'):
+		filtered_indexes = filtered_indexes.union(data[data['history_segment'] == '4) $350 - $500'].index)
+	if history_segments_filter.get('5) $500 - $750'):
+		filtered_indexes = filtered_indexes.union(data[data['history_segment'] == '5) $500 - $750'].index)
+	if history_segments_filter.get('6) $750 - $1,000'):
+		filtered_indexes = filtered_indexes.union(data[data['history_segment'] == '6) $750 - $1,000'].index)
+	if history_segments_filter.get('7) $1,000 +'):
+		filtered_indexes = filtered_indexes.union(data[data['history_segment'] == '7) $1,000 +'].index)
+
+	return data.loc[list(filtered_indexes)]
+
+
+def filter_by_zip_code(data: pd.DataFrame, zip_code_filter: dict) -> pd.DataFrame:
+	filterd_indexes = set()
+	if zip_code_filter.get('surburban'):
+		filterd_indexes = filterd_indexes.union(data[data['zip_code'] == 'Surburban'].index)
+	if zip_code_filter.get('urban'):
+		filterd_indexes = filterd_indexes.union(data[data['zip_code'] == 'Urban'].index)
+	if zip_code_filter.get('rural'):
+		filterd_indexes = filterd_indexes.union(data[data['zip_code'] == 'Rural'].index)
+
+	return data.loc[list(filterd_indexes)]
+
+
+def filter_by_recency(data: pd.DataFrame, recency_filter: list) -> pd.DataFrame:
+	return data[(data['recency'] >= recency_filter[0]) & (data['recency'] <= recency_filter[1])]
+
+
+def filter_data(data: pd.DataFrame, filters: dict) -> pd.DataFrame or None:
+	data = filter_by_newbie(data, filters['newbie_filter'])
+	if data.shape[0] == 0:
+		return None
+	data = filter_by_channel(data, filters['channel_filter'])
+	if data.shape[0] == 0:
+		return None
+	data = filter_by_mens(data, filters['mens_filter'])
+	if data.shape[0] == 0:
+		return None
+	data = filter_by_history_segments(data, filters['history_segments'])
+	if data.shape[0] == 0:
+		return None
+	data = filter_by_zip_code(data, filters['zip_code'])
+	if data.shape[0] == 0:
+		return None
+	data = filter_by_recency(data, filters['recency'])
+	if data.shape[0] == 0:
+		return None
+	return data
+
+
+def send_promo_and_get_res(data_train: pd.DataFrame, treatment: pd.DataFrame, target: pd.DataFrame):
+	indexes = data.index
+	target = target.loc[indexes]
+	treatment = treatment.loc[indexes]
 
 
 def get_newbie_plot(data):

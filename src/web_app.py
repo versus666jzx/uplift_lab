@@ -7,6 +7,8 @@ import tools
 
 dataset, target, treatment = tools.get_data()
 
+data_train, data_val, treatment_train, treatment_val, target_train, target_val = tools.data_split(dataset, treatment, target)
+
 st.title('Uplift lab')
 
 st.markdown(
@@ -16,6 +18,8 @@ st.markdown(
 	Данные для примера взяты из [_The MineThatData E-Mail Analytics And Data Mining Challenge_](https://blog.minethatdata.com/2008/03/minethatdata-e-mail-analytics-and-data.html)
 	
 	Этот набор данных содержит 42 693 строк с данными клиентов, которые в последний раз совершали покупки в течение двенадцати месяцев.
+	
+	Из данных уже отделена тестовая выборка в виде 30% записей клиентов, так что данных в предоставленной выборке будет меньше.
 	
 	Среди клиентов была проведена рекламная кампания с помощью _email_ рассылки:
 	- 1/2 клиентов были выбраны случайным образом для получения электронного письма, рекламирующего женскую продукцию;
@@ -28,11 +32,11 @@ st.markdown(
 	"""
 )
 refresh = st.button('Обновить выборку')
-title_subsample = dataset.sample(7)
+title_subsample = data_train.sample(7)
 if refresh:
-	title_subsample = dataset.sample(7)
+	title_subsample = data_train.sample(7)
 st.dataframe(title_subsample, width=700)
-st.write( f"Всего записей: {dataset.shape[0]}")
+st.write(f"Всего записей: {data_train.shape[0]}")
 
 st.write('Описание данных')
 st.markdown(
@@ -56,59 +60,113 @@ st.write("Для того, чтобы лучше понять на какую а
 
 with st.expander('Развернуть блок анализа данных'):
 
-	st.plotly_chart(tools.get_newbie_plot(dataset), use_container_width=True)
+	st.plotly_chart(tools.get_newbie_plot(data_train), use_container_width=True)
 	st.write(f'В данных примерно одинаковое количество новых и "старых клиентов". '
-			 f'Отношение новых клиентов к старым: {(dataset["newbie"] == 1).sum() / (dataset["newbie"] == 0).sum():.2f}')
+			 f'Отношение новых клиентов к старым: {(data_train["newbie"] == 1).sum() / (data_train["newbie"] == 0).sum():.2f}')
 
-	st.plotly_chart(tools.get_zipcode_plot(dataset), use_container_width=True)
-	tmp_res = dataset.zip_code.value_counts(normalize=True) * 100
+	st.plotly_chart(tools.get_zipcode_plot(data_train), use_container_width=True)
+	tmp_res = data_train.zip_code.value_counts(normalize=True) * 100
 	st.write(f'Большинство клиентов из пригорода: {tmp_res["Surburban"]:.2f}%, из города: {tmp_res["Urban"]:.2f}% и из села: {tmp_res["Rural"]:.2f}%')
 
-	tmp_res = dataset.channel.value_counts(normalize=True) * 100
-	st.plotly_chart(tools.get_channel_plot(dataset), use_container_width=True)
+	tmp_res = data_train.channel.value_counts(normalize=True) * 100
+	st.plotly_chart(tools.get_channel_plot(data_train), use_container_width=True)
 	st.write(f'В прошлом году почти одинаковое количество клиентов покупало товары через телефон и сайт, {tmp_res["Phone"]:.2f}% и {tmp_res["Web"]:.2f}% соответственно,'
 	         f' а {tmp_res["Multichannel"]:.2f}% клиентов покупали товары воспользовавшись двумя платформами.')
 
-	tmp_res = dataset.history_segment.value_counts(normalize=True) * 100
-	st.plotly_chart(tools.get_history_segment_plot(dataset), use_container_width=True)
+	tmp_res = data_train.history_segment.value_counts(normalize=True) * 100
+	st.plotly_chart(tools.get_history_segment_plot(data_train), use_container_width=True)
 	st.write(f'Как мы видим, большинство пользователей относится к сегменту \$0-\$100 ({tmp_res[0]:.2f}%), второй и '
 	         f'третий по количеству пользователей сегменты \$100-\$200 ({tmp_res[1]:.2f}%) и \$200-\$350 ({tmp_res[2]:.2f}%).')
 	st.write(f'К сегментам \$350-\$500 и \$500-\$750 относится {tmp_res[3]:.2f}% и {tmp_res[4]:.2f}% пользователей соответственно.')
 	st.write(f'Меньше всего пользователей в сегментах \$750-\$1.000 ({tmp_res[-2]:.2f}%) и \$1.000+ ({tmp_res[-1]:.2f}%).')
 
-	tmp_res = list(dataset.recency.value_counts(normalize=True) * 100)
-	st.plotly_chart(tools.get_recency_plot(dataset), use_container_width=True)
+	tmp_res = list(data_train.recency.value_counts(normalize=True) * 100)
+	st.plotly_chart(tools.get_recency_plot(data_train), use_container_width=True)
 	st.write(f'Большинство клиентов являются активными клиентами платформы, и совершали покупки в течение месяца ({tmp_res[0]:.2f}%)')
 	st.write('Также заметно, что 9 и 10 месяцев назад, много клиентов совершали покупки. Это может свидетельствовать о проведении'
 	         'рекламной кампании в это время или чего-то еще.')
 	st.write('Также интересно понаблюдать за долями новых клиентов в данном распределении.')
 
-	st.plotly_chart(tools.get_history_plot(dataset), use_container_width=True)
-	st.markdown('_График интерактивный_')
+	st.plotly_chart(tools.get_history_plot(data_train), use_container_width=True)
+	st.markdown('_График интерактивный. Двойной клик вернет в начальное состояние._')
 	st.write('Абсолютное большинство клиентов тратят \$25-\$35 на покупки, но есть и малая доля тех, кто тратит более \$3.000')
 	st.write('Интересный факт: все покупки более \$500 совершают только новые клиенты')
 
-st.subheader('Какие данные возьмем для проведения рекламной кампании?')
-clients_filter = st.radio('На каких клиентов будем воздействовать?', options=['Все', 'Только на новых', 'Только на старых'])
+filters = {}
 
+st.subheader('Выберем клиентов, которым отправим рекламу.')
+newbie_filter = st.radio('Каким клиентам отправим рекламу?', options=['Всем', 'Только новым', 'Только старым'])
+filters['newbie_filter'] = newbie_filter
 
-st.write('Выберите класс клиентов, по объему денег, потраченных в прошлом году (history segments).')
+channel_filter = st.radio('Канал, по которому клиент покупал в прошлом году', options=['Всем', 'Phone', 'Web', 'Multichannel'])
+filters['channel_filter'] = channel_filter
+
+mens_filter = st.radio('Клиенты, приобретавшие', options=['Любые товары', 'Мужские', 'Женские'])
+filters['mens_filter'] = mens_filter
+
+st.write('Выберите класс клиентов, по объему денег, потраченных в прошлом году (history segments)')
+filters['history_segments'] = {}
 first_group = st.checkbox('$0-$100', value=True)
+if first_group:
+	filters['history_segments']['1) $0 - $100'] = True
 second_group = st.checkbox('$100-$200', value=True)
+if second_group:
+	filters['history_segments']['2) $100 - $200'] = True
 third_group = st.checkbox('$200-$350', value=True)
+if third_group:
+	filters['history_segments']['3) $200 - $350'] = True
 fourth_group = st.checkbox('$350-$500', value=True)
+if fourth_group:
+	filters['history_segments']['4) $350 - $500'] = True
 fifth_group = st.checkbox('$500-$750', value=True)
+if fifth_group:
+	filters['history_segments']['5) $500 - $750'] = True
 sixth_group = st.checkbox('$750-$1.000', value=True)
+if sixth_group:
+	filters['history_segments']['6) $750 - $1,000'] = True
 seventh_group = st.checkbox('$1.000+', value=True)
+if seventh_group:
+	filters['history_segments']['7) $1,000 +'] = True
 
 st.write('Каких пользователей по почтовому коду выберем')
+filters['zip_code'] = {}
 surburban = st.checkbox('Surburban', value=True)
+if surburban:
+	filters['zip_code']['surburban'] = True
 urban = st.checkbox('Urban', value=True)
+if urban:
+	filters['zip_code']['urban'] = True
 rural = st.checkbox('Rural', value=True)
+if rural:
+	filters['zip_code']['rural'] = True
 
-recency = st.slider(label='Месяцев с момента покупки', min_value=int(dataset.recency.min()), max_value=int(dataset.recency.max()), value=(int(dataset.recency.min()), int(dataset.recency.max())))
+recency = st.slider(label='Месяцев с момента покупки', min_value=int(data_train.recency.min()), max_value=int(data_train.recency.max()), value=(int(data_train.recency.min()), int(data_train.recency.max())))
+filters['recency'] = recency
 
+disabled = False
 if not first_group and not second_group and not third_group and not fourth_group and not fifth_group and not sixth_group and not seventh_group:
-	pass
+	st.error('Необходимо выбрать хотя бы один класс')
+	disabled = True
+elif not surburban and not urban and not rural:
+	st.error('Необходимо выбрать хотя бы один почтовый индекс')
+	disabled = True
+
+filter_data = st.button(label='Отфильтровать', disabled=disabled)
+
+if filter_data:
+	filtered_dataset = tools.filter_data(data_train, filters)
+	if filtered_dataset is None:
+		st.error('Нет подходящих под выбранный фильтр клиентов. Попробуйте изменить фильтр.')
+	sample_size = 7 if filtered_dataset.shape[0] >= 7 else filtered_dataset.shape[0]
+	example = filtered_dataset.sample(sample_size)
+	st.write('Пример пользователей, которым будет отправлена реклама')
+	st.dataframe(example)
+	st.info(f'Количество клиентов, которым реклама будет отправлена: _**{filtered_dataset.shape[0]}**_ ({filtered_dataset.shape[0] / data_train.shape[0] * 100 :.2f}% от всех клиентов)')
 else:
-	st.button('Отфильтровать')
+	# нельзя отправить рекламу, до фильтрации
+	disabled = True
+
+send_promo = st.button('Отправить рекламу и посмотреть результат', disabled=disabled)
+if send_promo:
+	pass
+
