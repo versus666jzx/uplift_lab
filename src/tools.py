@@ -50,16 +50,16 @@ def data_split(data: pd.DataFrame, treatment: pd.DataFrame, target: pd.DataFrame
 
 
 def filter_by_newbie(data: pd.DataFrame, newbie_filter: str) -> pd.DataFrame:
-	if newbie_filter == 'Всем':
+	if newbie_filter == 'Все':
 		return data
-	elif newbie_filter == 'Только новым':
+	elif newbie_filter == 'Только новые':
 		return data[data['newbie'] == 1]
-	elif newbie_filter == 'Только старым':
+	elif newbie_filter == 'Только старые':
 		return data[data['newbie'] == 0]
 
 
 def filter_by_channel(data: pd.DataFrame, channel_filter: str) -> pd.DataFrame:
-	if channel_filter == 'Всем':
+	if channel_filter == 'Все':
 		return data
 	if channel_filter == 'Phone':
 		return data[data['channel'] == channel_filter]
@@ -70,7 +70,7 @@ def filter_by_channel(data: pd.DataFrame, channel_filter: str) -> pd.DataFrame:
 
 
 def filter_by_mens(data: pd.DataFrame, mens_filter: str) -> pd.DataFrame:
-	if mens_filter == 'Любые товары':
+	if mens_filter == 'Любые':
 		return data
 	if mens_filter == 'Мужские':
 		return data[data['mens'] == 1]
