@@ -115,6 +115,13 @@ def filter_by_recency(data: pd.DataFrame, recency_filter: list) -> pd.DataFrame:
 
 
 def filter_data(data: pd.DataFrame, filters: dict) -> pd.DataFrame or None:
+	"""
+	Filter data by user filters
+
+	:param data: filtered data
+	:param filters: dict of filters
+	:return: filtered data
+	"""
 	data = filter_by_newbie(data, filters['newbie_filter'])
 	if data.shape[0] == 0:
 		return None

@@ -9,32 +9,33 @@ import catboost
 
 import tools
 
-
+# загрузим датасет
 dataset, target, treatment = tools.get_data()
 
+# загрузим модель для ClassTransform
 ct_cbc_model = catboost.CatBoostClassifier()
 ct_cbc_model.load_model('src/models/ct_cbc.cbm')
-
+# загрузим модель для SingleMod
 sm_cbc_model = catboost.CatBoostClassifier()
 sm_cbc_model.load_model('src/models/sm_cbc.cbm')
-
+# загрузим модели для независимого класификатора
 tm_ctrl_cbc_model = catboost.CatBoostClassifier()
 tm_ctrl_cbc_model.load_model('src/models/tm_ctrl_cbc.cbm')
 tm_trmnt_cbc_model = catboost.CatBoostClassifier()
 tm_ctrl_cbc_model.load_model('src/models/tm_trmnt_cbc.cbm')
-
+# загрузим модели для зависимого класификатора
 tm_dependend_ctrl_cbc = catboost.CatBoostClassifier()
 tm_ctrl_cbc_model.load_model('src/models/tm_dependend_ctrl_cbc.cbm')
 tm_dependend_trmntl_cbc = catboost.CatBoostClassifier()
 tm_dependend_trmntl_cbc.load_model('src/models/tm_dependend_trmnt_cbc.cbm')
 
+# загрузим данные
 data_train_index = pd.read_csv('data/data_train_index.csv')
 data_test_index = pd.read_csv('data/data_test_index.csv')
 treatment_train_index = pd.read_csv('data/treatment_train_index.csv')
 treatment_test_index = pd.read_csv('data/treatment_test_index.csv')
 target_train_index = pd.read_csv('data/target_train_index.csv')
 target_test_index = pd.read_csv('data/target_test_index.csv')
-
 
 # фиксируем выборки, чтобы результат работы ML был предсказуем
 data_train = dataset.loc[data_train_index['0']]
@@ -43,9 +44,6 @@ treatment_train = treatment.loc[treatment_train_index['0']]
 treatment_test = treatment.loc[treatment_test_index['0']]
 target_train = target.loc[target_train_index['0']]
 target_test = target.loc[target_test_index['0']]
-
-if 'filter_data' not in st.session_state.keys():
-	st.session_state.filter_data = True
 
 st.title('Uplift lab')
 
@@ -69,6 +67,7 @@ st.markdown(
 	Пример данных приведен ниже.
 	"""
 )
+
 refresh = st.button('Обновить выборку')
 title_subsample = data_train.sample(7)
 if refresh:
@@ -132,6 +131,7 @@ with st.expander('Развернуть блок анализа данных'):
 
 filters = {}
 
+# блок фильтров
 with st.form(key='filter-clients'):
 	st.subheader('Выберем клиентов, которым отправим рекламу.')
 
@@ -195,7 +195,7 @@ with st.form(key='filter-clients'):
 
 	filter_form_submit_button = st.form_submit_button('Применить фильтр')
 
-
+# проверка корректности заполнения форм
 if not first_group and not second_group and not third_group and not fourth_group and not fifth_group and not sixth_group and not seventh_group:
 	st.error('Необходимо выбрать хотя бы один класс')
 	st.stop()
@@ -203,7 +203,10 @@ elif not surburban and not urban and not rural:
 	st.error('Необходимо выбрать хотя бы один почтовый индекс')
 	st.stop()
 
+# фильтруем тестовые данные по пользовательскому выбору
 filtered_dataset = tools.filter_data(data_test, filters)
+
+# проверяем, что данные отфильтровались
 if filtered_dataset is None:
 	st.error('Не найдено пользователей для данных фильтров. Попробуйте изменить фильтры.')
 	st.stop()
@@ -213,25 +216,27 @@ uplift = [1 for _ in filtered_dataset.index]
 target_filtered = target_test.loc[filtered_dataset.index]
 treatment_filtered = treatment_test.loc[filtered_dataset.index]
 
+# блок с демонстрацией отфильтрованных данных
 with st.expander(label='Посмотреть пример пользователей, которым будет отправлена реклама'):
 	sample_size = 7 if filtered_dataset.shape[0] >= 7 else filtered_dataset.shape[0]
 	example = filtered_dataset.sample(sample_size)
 	st.dataframe(example)
 	res = st.button('Обновить')
 
-
 with st.form(key='user_metricks'):
+	# считаем метрики для пользователя
 	user_metric_uplift_at_k = uplift_at_k(target_filtered, uplift, treatment_filtered, strategy='overall', k=k)
 	user_metric_uplift_by_percentile = uplift_by_percentile(target_filtered, uplift, treatment_filtered)
 	user_metric_qini_auc_score = qini_auc_score(target_filtered, uplift, treatment_filtered)
 	user_metric_weighted_average_uplift = tools.get_weighted_average_uplift(target_filtered, uplift, treatment_filtered)
+	# отображаем метрики
 	col1, col2, col3 = st.columns(3)
 	col1.metric(label=f'Uplift для {k}% пользователей', value=f'{user_metric_uplift_at_k:.4f}')
 	col2.metric(label=f'Qini AUC score', value=f'{user_metric_qini_auc_score:.4f}', help='Всегда будет 0 для пользователя')
 	col3.metric(label=f'Weighted average uplift', value=f'{user_metric_weighted_average_uplift:.4f}')
 	st.write('Uplift по процентилям')
 	st.write(user_metric_uplift_by_percentile)
-
+	# отображаем графики
 	st.form_submit_button('Обновить графики', help='При изменении флагов')
 	perfect_qini = st.checkbox('Отрисовать идеальную метрику qini')
 	st.pyplot(plot_qini_curve(target_filtered, uplift, treatment_filtered, perfect=perfect_qini).figure_)
@@ -242,39 +247,41 @@ with st.form(key='user_metricks'):
 show_ml_reasons = st.checkbox('Показать решения с помощью ML')
 if show_ml_reasons:
 	with st.expander('Решение с помощью CatBoost'):
-		tm_ctrl = TwoModels(
-			estimator_trmnt=tm_dependend_trmntl_cbc,
-			estimator_ctrl=tm_dependend_ctrl_cbc,
-			method='ddr_control'
-		)
+		with st.form(key='catboost_metricks'):
 
+			tm_ctrl = TwoModels(
+				estimator_trmnt=tm_dependend_trmntl_cbc,
+				estimator_ctrl=tm_dependend_ctrl_cbc,
+				method='ddr_control'
+			)
 
-		tm_ctrl = tm_ctrl.fit(
-			data_train, target_train, treatment_train,
-			estimator_trmnt_fit_params={
-				'cat_features': ['womens', 'mens', 'channel', 'zip_code', 'history_segment', 'newbie']},
-			estimator_ctrl_fit_params={
-				'cat_features': ['womens', 'mens', 'channel', 'zip_code', 'history_segment', 'newbie']}
-		)
+			tm_ctrl = tm_ctrl.fit(
+				data_train, target_train, treatment_train,
+				estimator_trmnt_fit_params={
+					'cat_features': ['womens', 'mens', 'channel', 'zip_code', 'history_segment', 'newbie']},
+				estimator_ctrl_fit_params={
+					'cat_features': ['womens', 'mens', 'channel', 'zip_code', 'history_segment', 'newbie']}
+			)
 
-		uplift_tm_ctrl = tm_ctrl.predict(data_test)
+			uplift_tm_ctrl = tm_ctrl.predict(filtered_dataset)
 
-		tm_ctrl_score = uplift_at_k(y_true=target_test, uplift=uplift_tm_ctrl, treatment=treatment_test,
-		                            strategy='by_group', k=k)
-		# считаем метрики для ML
-		catboost_uplift_at_k = uplift_at_k(target_filtered, uplift_tm_ctrl, treatment_filtered, strategy='overall', k=k)
-		catboost_uplift_by_percentile = uplift_by_percentile(target_filtered, uplift_tm_ctrl, treatment_filtered)
-		catboost_qini_auc_score = qini_auc_score(target_filtered, uplift_tm_ctrl, treatment_filtered)
-		catboost_weighted_average_uplift = tools.get_weighted_average_uplift(target_filtered, uplift_tm_ctrl, treatment_filtered)
-		# отображаем метрики
-		col1, col2, col3 = st.columns(3)
-		col1.metric(label=f'Uplift для {k}% пользователей', value=f'{catboost_uplift_at_k:.4f}', delta=f'{catboost_uplift_at_k - user_metric_uplift_at_k:.4f}')
-		col2.metric(label=f'Qini AUC score', value=f'{catboost_qini_auc_score:.4f}', help='Всегда будет 0 для пользователя', delta=f'{catboost_qini_auc_score - user_metric_qini_auc_score:.4f}')
-		col3.metric(label=f'Weighted average uplift', value=f'{catboost_weighted_average_uplift:.4f}', delta=f'{catboost_weighted_average_uplift - user_metric_weighted_average_uplift:.4f}')
-		st.write('Uplift по процентилям')
-		st.write(catboost_uplift_by_percentile)
+			tm_ctrl_score = uplift_at_k(y_true=target_filtered, uplift=uplift_tm_ctrl, treatment=treatment_filtered,
+			                            strategy='by_group', k=k)
+			# считаем метрики для ML
+			catboost_uplift_at_k = uplift_at_k(target_filtered, uplift_tm_ctrl, treatment_filtered, strategy='overall', k=k)
+			catboost_uplift_by_percentile = uplift_by_percentile(target_filtered, uplift_tm_ctrl, treatment_filtered)
+			catboost_qini_auc_score = qini_auc_score(target_filtered, uplift_tm_ctrl, treatment_filtered)
+			catboost_weighted_average_uplift = tools.get_weighted_average_uplift(target_filtered, uplift_tm_ctrl, treatment_filtered)
+			# отображаем метрики
+			col1, col2, col3 = st.columns(3)
+			col1.metric(label=f'Uplift для {k}% пользователей', value=f'{catboost_uplift_at_k:.4f}', delta=f'{catboost_uplift_at_k - user_metric_uplift_at_k:.4f}')
+			col2.metric(label=f'Qini AUC score', value=f'{catboost_qini_auc_score:.4f}', help='Всегда будет 0 для пользователя', delta=f'{catboost_qini_auc_score - user_metric_qini_auc_score:.4f}')
+			col3.metric(label=f'Weighted average uplift', value=f'{catboost_weighted_average_uplift:.4f}', delta=f'{catboost_weighted_average_uplift - user_metric_weighted_average_uplift:.4f}')
+			st.write('Uplift по процентилям')
+			st.write(catboost_uplift_by_percentile)
 
-		perfect_qini = st.checkbox('Отрисовать идеальную метрику qini')
-		st.pyplot(plot_qini_curve(target_filtered, uplift_tm_ctrl, treatment_filtered, perfect=perfect_qini).figure_)
-		prefect_uplift = st.checkbox('Отрисовать идеальную метрику uplift')
-		st.pyplot(plot_uplift_curve(target_filtered, uplift_tm_ctrl, treatment_filtered, perfect=prefect_uplift).figure_)
+			st.form_submit_button('Обновить графики', help='При изменении флагов')
+			perfect_qini = st.checkbox('Отрисовать идеальную метрику qini')
+			st.pyplot(plot_qini_curve(target_filtered, uplift_tm_ctrl, treatment_filtered, perfect=perfect_qini).figure_)
+			prefect_uplift = st.checkbox('Отрисовать идеальную метрику uplift')
+			st.pyplot(plot_uplift_curve(target_filtered, uplift_tm_ctrl, treatment_filtered, perfect=prefect_uplift).figure_)
