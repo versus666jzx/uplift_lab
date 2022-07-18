@@ -226,13 +226,12 @@ with st.expander('Результаты ручной фильтрации', expan
 	st.write('Uplift по процентилям')
 	st.write(user_metric_uplift_by_percentile)
 
-
 show_ml_reasons = st.checkbox('Показать решения с помощью ML')
 if show_ml_reasons:
 	with st.expander('Решение с помощью CatBoost'):
 		with st.form(key='catboost_metricks'):
 
-			final_uplift = tm_dependend_cbc.loc[target_filtered.index]
+			final_uplift = sm_cbc.loc[filtered_dataset.index]['0']
 
 			# считаем метрики для ML
 			catboost_uplift_at_k = uplift_at_k(target_filtered, final_uplift, treatment_filtered, strategy='overall', k=k)
@@ -244,6 +243,9 @@ if show_ml_reasons:
 			col1.metric(label=f'Uplift для {k}% пользователей', value=f'{catboost_uplift_at_k:.4f}', delta=f'{catboost_uplift_at_k - user_metric_uplift_at_k:.4f}')
 			col2.metric(label=f'Qini AUC score', value=f'{catboost_qini_auc_score:.4f}', help='Всегда будет 0 для пользователя', delta=f'{catboost_qini_auc_score - user_metric_qini_auc_score:.4f}')
 			col3.metric(label=f'Weighted average uplift', value=f'{catboost_weighted_average_uplift:.4f}', delta=f'{catboost_weighted_average_uplift - user_metric_weighted_average_uplift:.4f}')
+
+			st.write()
+
 			st.write('Uplift по процентилям')
 			st.write(catboost_uplift_by_percentile)
 
