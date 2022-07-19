@@ -1,7 +1,7 @@
 import catboost
 import pandas as pd
 import os
-from sklift.metrics import uplift_at_k, uplift_by_percentile, qini_auc_score
+from sklift.metrics import uplift_at_k, uplift_by_percentile, qini_auc_score, qini_curve
 from sklift.viz import plot_qini_curve, plot_uplift_curve
 from sklift.models import SoloModel, TwoModels, ClassTransformation
 import streamlit as st
@@ -210,6 +210,7 @@ with st.expander(label='Посмотреть пример пользовател
 	sample_size = 7 if filtered_dataset.shape[0] >= 7 else filtered_dataset.shape[0]
 	example = filtered_dataset.sample(sample_size)
 	st.dataframe(example)
+	st.info(f'Количество пользователей, попавших в выборку: {filtered_dataset.shape[0]} ({filtered_dataset.shape[0] / data_test.shape[0] * 100 :.2f}%)')
 	res = st.button('Обновить')
 
 with st.expander('Результаты ручной фильтрации', expanded=True):
@@ -218,11 +219,13 @@ with st.expander('Результаты ручной фильтрации', expan
 	user_metric_uplift_by_percentile = uplift_by_percentile(target_filtered, uplift, treatment_filtered)
 	user_metric_qini_auc_score = qini_auc_score(target_filtered, uplift, treatment_filtered)
 	user_metric_weighted_average_uplift = tools.get_weighted_average_uplift(target_filtered, uplift, treatment_filtered)
+	qini_curve_user_score = qini_curve(target_filtered, uplift, treatment_filtered)
 	# отображаем метрики
 	col1, col2, col3 = st.columns(3)
 	col1.metric(label=f'Uplift для {k}% пользователей', value=f'{user_metric_uplift_at_k:.4f}')
 	col2.metric(label=f'Qini AUC score', value=f'{user_metric_qini_auc_score:.4f}', help='Всегда будет 0 для пользователя')
 	col3.metric(label=f'Weighted average uplift', value=f'{user_metric_weighted_average_uplift:.4f}')
+
 	st.write('Uplift по процентилям')
 	st.write(user_metric_uplift_by_percentile)
 
@@ -238,19 +241,23 @@ if show_ml_reasons:
 			catboost_uplift_by_percentile = uplift_by_percentile(target_filtered, final_uplift, treatment_filtered)
 			catboost_qini_auc_score = qini_auc_score(target_filtered, final_uplift, treatment_filtered)
 			catboost_weighted_average_uplift = tools.get_weighted_average_uplift(target_filtered, final_uplift, treatment_filtered)
+			qini_curve_score = qini_curve(target_filtered, final_uplift, treatment_filtered)
 			# отображаем метрики
 			col1, col2, col3 = st.columns(3)
 			col1.metric(label=f'Uplift для {k}% пользователей', value=f'{catboost_uplift_at_k:.4f}', delta=f'{catboost_uplift_at_k - user_metric_uplift_at_k:.4f}')
 			col2.metric(label=f'Qini AUC score', value=f'{catboost_qini_auc_score:.4f}', help='Всегда будет 0 для пользователя', delta=f'{catboost_qini_auc_score - user_metric_qini_auc_score:.4f}')
 			col3.metric(label=f'Weighted average uplift', value=f'{catboost_weighted_average_uplift:.4f}', delta=f'{catboost_weighted_average_uplift - user_metric_weighted_average_uplift:.4f}')
 
-			st.write()
-
 			st.write('Uplift по процентилям')
 			st.write(catboost_uplift_by_percentile)
-
 			st.form_submit_button('Обновить графики', help='При изменении флагов')
 			perfect_qini = st.checkbox('Отрисовать идеальную метрику qini')
-			st.pyplot(plot_qini_curve(target_filtered, final_uplift, treatment_filtered, perfect=perfect_qini).figure_)
+			# получаем координаты пользовательской метрики для точки на графике
+			x, y = qini_curve_user_score[0][1], qini_curve_user_score[1][1]
+			# получаем объект UpliftCurveDisplay с осями и графиком matplotlib
+			fig = plot_qini_curve(target_test, sm_cbc['0'], treatment_test, perfect=perfect_qini)
+			# добавляем пользовательскую метрику на оси графика
+			fig.ax_.plot(x, y, 'ro--', linewidth=2, markersize=3)
+			st.pyplot(fig.figure_)
 			prefect_uplift = st.checkbox('Отрисовать идеальную метрику uplift')
-			st.pyplot(plot_uplift_curve(target_filtered, final_uplift, treatment_filtered, perfect=prefect_uplift).figure_)
+			st.pyplot(plot_uplift_curve(target_test, sm_cbc['0'], treatment_test, perfect=prefect_uplift).figure_)
