@@ -1,7 +1,7 @@
 import catboost
 import pandas as pd
 import os
-from sklift.metrics import uplift_at_k, uplift_by_percentile, qini_auc_score, qini_curve
+from sklift.metrics import uplift_at_k, uplift_by_percentile, qini_auc_score, qini_curve, uplift_curve
 from sklift.viz import plot_qini_curve, plot_uplift_curve
 from sklift.models import SoloModel, TwoModels, ClassTransformation
 import streamlit as st
@@ -220,6 +220,7 @@ with st.expander('Результаты ручной фильтрации', expan
 	user_metric_qini_auc_score = qini_auc_score(target_filtered, uplift, treatment_filtered)
 	user_metric_weighted_average_uplift = tools.get_weighted_average_uplift(target_filtered, uplift, treatment_filtered)
 	qini_curve_user_score = qini_curve(target_filtered, uplift, treatment_filtered)
+	uplift_curve_user_score = uplift_curve(target_filtered, uplift, treatment_filtered)
 	# отображаем метрики
 	col1, col2, col3 = st.columns(3)
 	col1.metric(label=f'Uplift для {k}% пользователей', value=f'{user_metric_uplift_at_k:.4f}')
@@ -242,6 +243,7 @@ if show_ml_reasons:
 			catboost_qini_auc_score = qini_auc_score(target_filtered, final_uplift, treatment_filtered)
 			catboost_weighted_average_uplift = tools.get_weighted_average_uplift(target_filtered, final_uplift, treatment_filtered)
 			qini_curve_score = qini_curve(target_filtered, final_uplift, treatment_filtered)
+
 			# отображаем метрики
 			col1, col2, col3 = st.columns(3)
 			col1.metric(label=f'Uplift для {k}% пользователей', value=f'{catboost_uplift_at_k:.4f}', delta=f'{catboost_uplift_at_k - user_metric_uplift_at_k:.4f}')
@@ -252,12 +254,24 @@ if show_ml_reasons:
 			st.write(catboost_uplift_by_percentile)
 			st.form_submit_button('Обновить графики', help='При изменении флагов')
 			perfect_qini = st.checkbox('Отрисовать идеальную метрику qini')
+
 			# получаем координаты пользовательской метрики для точки на графике
 			x, y = qini_curve_user_score[0][1], qini_curve_user_score[1][1]
 			# получаем объект UpliftCurveDisplay с осями и графиком matplotlib
 			fig = plot_qini_curve(target_test, sm_cbc['0'], treatment_test, perfect=perfect_qini)
 			# добавляем пользовательскую метрику на оси графика
-			fig.ax_.plot(x, y, 'ro', markersize=3)
+			fig.ax_.plot(x, y, 'ro', markersize=3, label='Analitic qini')
+			# добавляем обозначение метрики пользователя в легенду
+			fig.ax_.legend(loc=u'upper left', bbox_to_anchor=(1, 1))
 			st.pyplot(fig.figure_)
 			prefect_uplift = st.checkbox('Отрисовать идеальную метрику uplift')
-			st.pyplot(plot_uplift_curve(target_test, sm_cbc['0'], treatment_test, perfect=prefect_uplift).figure_)
+
+			# получаем координаты пользовательской метрики для точки на графике
+			x, y = uplift_curve_user_score[0][1], uplift_curve_user_score[1][1]
+			# получаем объект UpliftCurveDisplay с осями и графиком matplotlib
+			fig = plot_uplift_curve(target_test, sm_cbc['0'], treatment_test, perfect=perfect_qini)
+			# добавляем пользовательскую метрику на оси графика
+			fig.ax_.plot(x, y, 'ro', markersize=3, label='Analitic qini')
+			# добавляем обозначение метрики пользователя в легенду
+			fig.ax_.legend(loc=u'upper left', bbox_to_anchor=(1, 1))
+			st.pyplot(fig.figure_)
