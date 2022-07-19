@@ -257,7 +257,7 @@ if show_ml_reasons:
 			# получаем объект UpliftCurveDisplay с осями и графиком matplotlib
 			fig = plot_qini_curve(target_test, sm_cbc['0'], treatment_test, perfect=perfect_qini)
 			# добавляем пользовательскую метрику на оси графика
-			fig.ax_.plot(x, y, 'ro--', linewidth=2, markersize=3)
+			fig.ax_.plot(x, y, 'ro', markersize=3)
 			st.pyplot(fig.figure_)
 			prefect_uplift = st.checkbox('Отрисовать идеальную метрику uplift')
 			st.pyplot(plot_uplift_curve(target_test, sm_cbc['0'], treatment_test, perfect=prefect_uplift).figure_)
