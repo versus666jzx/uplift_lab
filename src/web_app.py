@@ -42,7 +42,7 @@ st.title('Uplift lab')
 
 st.markdown(
 	"""
-	#### Рассмотрим пример применения одного из подходов прогнозирования _uplift_.
+	#### Рассмотрим применение одного из подходов прогнозирования _uplift_.
 	
 	Данные для примера взяты из [_The MineThatData E-Mail Analytics And Data Mining Challenge_](https://blog.minethatdata.com/2008/03/minethatdata-e-mail-analytics-and-data.html)
 	
