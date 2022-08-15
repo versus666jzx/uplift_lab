@@ -1,5 +1,3 @@
-
-
 ---
 title: Uplift lab
 emoji: 🚀
