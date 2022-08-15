@@ -7,6 +7,15 @@ on:
   workflow_dispatch:
 
 jobs:
+
+  check_files:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check large files
+        uses: ActionsDesk/lfs-warning@v2.0
+        with:
+          filesizelimit: 10485760 # this is 10MB so we can sync to HF Spaces
+
   sync-to-hub:
     runs-on: ubuntu-latest
     steps:
@@ -17,3 +26,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: git push https://HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/versus666/uplift_lab main
+    needs: check_files
