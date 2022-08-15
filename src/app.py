@@ -1,11 +1,9 @@
-import catboost
 import pandas as pd
-import os
+
 from sklift.metrics import uplift_at_k, uplift_by_percentile, qini_auc_score, qini_curve, uplift_curve
 from sklift.viz import plot_qini_curve, plot_uplift_curve
-from sklift.models import SoloModel, TwoModels, ClassTransformation
+
 import streamlit as st
-import catboost
 
 import tools
 

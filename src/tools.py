@@ -1,16 +1,9 @@
-from typing import Any
-
 import pandas as pd
-import numpy as np
 from sklearn.model_selection import train_test_split
 from sklift.datasets import fetch_hillstrom
-from sklift.metrics import uplift_at_k, uplift_by_percentile, weighted_average_uplift
-from sklift.viz import plot_uplift_by_percentile
-from catboost import CatBoostClassifier
-import sklearn
+from sklift.metrics import weighted_average_uplift
 import streamlit as st
 import plotly.express as px
-import plotly.graph_objects as go
 
 
 def test():
@@ -18,7 +11,7 @@ def test():
 
 
 @st.experimental_memo
-def get_data() -> tuple[Any, Any, Any]:
+def get_data():
 	# получаем датасет
 	dataset = fetch_hillstrom(target_col='visit')
 	dataset, target, treatment = dataset['data'], dataset['target'], dataset['treatment']
@@ -34,7 +27,7 @@ def get_data() -> tuple[Any, Any, Any]:
 
 
 @st.experimental_memo
-def data_split(data: pd.DataFrame, treatment: pd.DataFrame, target: pd.DataFrame) -> tuple[Any, Any, Any, Any, Any, Any]:
+def data_split(data: pd.DataFrame, treatment: pd.DataFrame, target: pd.DataFrame):
 	# склеиваем threatment и target для дальнейшей стратификации по ним
 	stratify_cols = pd.concat([treatment, target], axis=1)
 	# сплитим датасет
