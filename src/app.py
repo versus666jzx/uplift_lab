@@ -226,7 +226,7 @@ with st.expander('Результаты ручной фильтрации', expan
 	# отображаем метрики
 	col1, col2, col3 = st.columns(3)
 	col1.metric(label=f'Uplift для {k}% пользователей', value=f'{user_metric_uplift_at_k:.4f}')
-	col2.metric(label=f'Qini AUC score', value=f'{user_metric_qini_auc_score:.4f}', help='Всегда будет 0 для пользователя')
+	col2.metric(label=f'Qini AUC score', value=f'{user_metric_qini_auc_score:.4f}')
 	col3.metric(label=f'Weighted average uplift', value=f'{user_metric_weighted_average_uplift:.4f}')
 
 	st.write('Uplift по процентилям')
@@ -311,7 +311,6 @@ if show_ml_reasons:
 			col2.metric(
 				label=f'Qini AUC score',
 				value=f'{random_forest_qini_auc_score:.4f}',
-				help='Всегда будет 0 для пользователя',
 				delta=f'{random_forest_qini_auc_score - user_metric_qini_auc_score:.4f}'
 			)
 			col3.metric(
@@ -367,7 +366,6 @@ if show_ml_reasons:
 			col2.metric(
 				label=f'Qini AUC score',
 				value=f'{xgboost_qini_auc_score:.4f}',
-				help='Всегда будет 0 для пользователя',
 				delta=f'{xgboost_qini_auc_score - user_metric_qini_auc_score:.4f}'
 			)
 			col3.metric(
