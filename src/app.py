@@ -255,7 +255,6 @@ if show_ml_reasons:
 			col2.metric(
 				label=f'Qini AUC score',
 				value=f'{catboost_qini_auc_score:.4f}',
-				help='Всегда будет 0 для пользователя',
 				delta=f'{catboost_qini_auc_score - user_metric_qini_auc_score:.4f}'
 			)
 			col3.metric(

@@ -1,6 +1,6 @@
 ---
-title: Uplift lab
-emoji: 🚀
+title: Uplift Lab
+emoji: 🚀 🚀 🚀
 colorFrom: blue
 colorTo: green
 sdk: streamlit
