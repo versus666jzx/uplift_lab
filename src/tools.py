@@ -299,11 +299,11 @@ def get_history_plot(data):
 	fig = px.histogram(
 		data['history'],
 		color=data['newbie'],
-		title='Распределение клиентов по количеству месяцев с последней покупки'
+		title='Распределение клиентов по сумме покупки'
 	)
 
 	fig.update_xaxes(
-		title='Месяцев  после  покупки'
+		title='Сумма покупки'
 	)
 
 	fig.update_yaxes(
